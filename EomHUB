@@ -1,62 +1,119 @@
 -- ===== 설정 =====
 local BOSS_SPAWNER = workspace:WaitForChild("Spawner")
 local BOSS_NAME = "[공허의 방랑자] 보이드로버"
-local COOLDOWN = 9000
+local COOLDOWN = 9000 -- 9000초
 -- =================
 
 local Players = game:GetService("Players")
-local player = Players.LocalPlayer
 local UIS = game:GetService("UserInputService")
+local player = Players.LocalPlayer
 
--- UI 생성
+-- ===== GUI 생성 =====
 local gui = Instance.new("ScreenGui")
 gui.ResetOnSpawn = false
 gui.Parent = player:WaitForChild("PlayerGui")
 
--- 메인 프레임
-local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.fromOffset(360, 90)
-frame.Position = UDim2.fromScale(0.5, 0.1) - UDim2.fromOffset(180, 0)
-frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-frame.BackgroundTransparency = 0.3
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 360, 0, 110)
+mainFrame.Position = UDim2.new(0.5, -180, 0.1, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+mainFrame.BackgroundTransparency = 0.35
+mainFrame.Parent = gui
 
-Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 16)
+-- 🔷 드래그 전용 바 (핵심)
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 30)
+titleBar.BackgroundColor3 = Color3.fromRGB(25,25,25)
+titleBar.Parent = mainFrame
+titleBar.Active = true
 
-local stroke = Instance.new("UIStroke", frame)
-stroke.Color = Color3.new(1,1,1)
-stroke.Thickness = 2
+local titleText = Instance.new("TextLabel")
+titleText.Size = UDim2.new(1, 0, 1, 0)
+titleText.BackgroundTransparency = 1
+titleText.Text = "월드보스 타이머"
+titleText.TextColor3 = Color3.new(1,1,1)
+titleText.TextScaled = true
+titleText.Font = Enum.Font.GothamBold
+titleText.Parent = titleBar
 
--- 텍스트 라벨
-local label = Instance.new("TextLabel", frame)
-label.Size = UDim2.new(1, -50, 1, 0)
-label.Position = UDim2.fromOffset(10, 0)
+-- 🔷 타이머 라벨
+local label = Instance.new("TextLabel")
+label.Size = UDim2.new(1, -20, 0, 60)
+label.Position = UDim2.new(0, 10, 0, 40)
 label.BackgroundTransparency = 1
-label.TextColor3 = Color3.new(1, 1, 1)
+label.TextColor3 = Color3.new(1,1,1)
 label.TextScaled = true
 label.Font = Enum.Font.GothamBold
-label.TextXAlignment = Enum.TextXAlignment.Left
+label.Parent = mainFrame
 
--- 닫기 버튼
-local close = Instance.new("TextButton", frame)
-close.Size = UDim2.fromOffset(36, 36)
-close.Position = UDim2.new(1, -42, 0, 6)
-close.Text = "X"
-close.Font = Enum.Font.GothamBold
-close.TextScaled = true
-close.BackgroundColor3 = Color3.fromRGB(30,30,30)
-close.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", close).CornerRadius = UDim.new(0, 10)
+-- ===== 드래그 로직 =====
+local dragging = false
+local dragStart
+local startPos
 
-close.MouseButton1Click:Connect(function()
-	frame.Visible = false
+titleBar.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = mainFrame.Position
+
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
 end)
 
--- 드래그 이동
-local dragging = false
-local dragStart, startPos
+UIS.InputChanged:Connect(function(input)
+	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+		local delta = input.Position - dragStart
+		mainFrame.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
 
-frame.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+-- ===== 보스 타이머 로직 (원래 로직 유지) =====
+local boss = BOSS_SPAWNER:WaitForChild(BOSS_NAME)
+local coolValue = boss:WaitForChild("Cool")
+
+local timerRunning = false
+
+local function updateTimer()
+	if timerRunning then return end
+	timerRunning = true
+
+	while true do
+		local remaining = COOLDOWN - coolValue.Value
+		if remaining <= 0 then
+			label.Text = "월드 보스 생성됨"
+			timerRunning = false
+			return
+		else
+			local hours = math.floor(remaining / 3600)
+			local minutes = math.floor((remaining % 3600) / 60)
+			local seconds = math.floor(remaining % 60)
+			label.Text = string.format("월드 보스 리젠까지 %02d:%02d:%02d", hours, minutes, seconds)
+		end
+		task.wait(1)
+	end
+end
+
+-- 처음 실행
+updateTimer()
+
+-- Cool 값 변화 감지
+coolValue.Changed:Connect(function()
+	if coolValue.Value >= COOLDOWN then
+		label.Text = "월드 보스 생성됨"
+	else
+		updateTimer()
+	end
+end)	if input.UserInputType == Enum.UserInputType.MouseButton1 then
 		dragging = true
 		dragStart = input.Position
 		startPos = frame.Position
