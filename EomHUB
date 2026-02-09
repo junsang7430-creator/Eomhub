@@ -7,37 +7,22 @@ local COOLDOWN = 9000
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
--- GUI 중복 방지
-local old = player.PlayerGui:FindFirstChild("BossTimerGui")
-if old then old:Destroy() end
-
 -- UI 생성
 local gui = Instance.new("ScreenGui")
-gui.Name = "BossTimerGui"
 gui.ResetOnSpawn = false
 gui.Parent = player:WaitForChild("PlayerGui")
 
--- ===== 열기 버튼 =====
-local openBtn = Instance.new("TextButton", gui)
-openBtn.Size = UDim2.fromOffset(90, 36)
-openBtn.Position = UDim2.new(0, 20, 0.1, 0)
-openBtn.Text = "보스 타이머"
-openBtn.Font = Enum.Font.GothamBold
-openBtn.TextScaled = true
-openBtn.BackgroundColor3 = Color3.fromRGB(30,30,30)
-openBtn.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", openBtn).CornerRadius = UDim.new(0, 12)
-openBtn.Visible = false
-
--- ===== 메인 프레임 =====
+-- 메인 프레임
 local frame = Instance.new("Frame", gui)
 frame.Size = UDim2.fromOffset(360, 90)
 frame.Position = UDim2.fromScale(0.5, 0.1) - UDim2.fromOffset(180, 0)
 frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 frame.BackgroundTransparency = 0.3
 
+-- 둥근 모서리
 Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 16)
 
+-- 하얀 테두리
 local stroke = Instance.new("UIStroke", frame)
 stroke.Color = Color3.new(1,1,1)
 stroke.Thickness = 2
@@ -52,7 +37,7 @@ label.TextScaled = true
 label.Font = Enum.Font.GothamBold
 label.TextXAlignment = Enum.TextXAlignment.Left
 
--- ===== 닫기 버튼 =====
+-- 닫기 버튼
 local close = Instance.new("TextButton", frame)
 close.Size = UDim2.fromOffset(36, 36)
 close.Position = UDim2.new(1, -42, 0, 6)
@@ -65,20 +50,15 @@ Instance.new("UICorner", close).CornerRadius = UDim.new(0, 10)
 
 close.MouseButton1Click:Connect(function()
 	frame.Visible = false
-	openBtn.Visible = true
 end)
 
-openBtn.MouseButton1Click:Connect(function()
-	frame.Visible = true
-	openBtn.Visible = false
-end)
-
--- ===== 보스 NumberValue 접근 =====
+-- 보스 NumberValue 접근
 local boss = BOSS_SPAWNER:WaitForChild(BOSS_NAME)
 local coolValue = boss:WaitForChild("Cool")
 
 local timerRunning = false
 
+-- 타이머 업데이트 (원래 로직 유지)
 local function updateTimer()
 	if timerRunning then return end
 	timerRunning = true
