@@ -1,0 +1,62 @@
+-- ===== 설정 =====
+local BOSS_SPAWNER = workspace:WaitForChild("Spawner")
+local BOSS_NAME = "[공허의 방랑자] 보이드로버"
+local COOLDOWN = 9000 -- 9000초마다 소환
+-- =================
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- UI 생성
+local gui = Instance.new("ScreenGui")
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+local label = Instance.new("TextLabel")
+label.Size = UDim2.new(0, 360, 0, 80)
+label.Position = UDim2.new(0.5, -180, 0.1, 0)
+label.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+label.BackgroundTransparency = 0.35
+label.TextColor3 = Color3.new(1, 1, 1)
+label.TextScaled = true
+label.Font = Enum.Font.GothamBold
+label.Parent = gui
+
+-- 보스 NumberValue 접근
+local boss = BOSS_SPAWNER:WaitForChild(BOSS_NAME)
+local coolValue = boss:WaitForChild("Cool")
+
+local timerRunning = false
+
+-- 타이머 업데이트
+local function updateTimer()
+    if timerRunning then return end
+    timerRunning = true
+
+    while true do
+        local remaining = COOLDOWN - coolValue.Value
+        if remaining <= 0 then
+            label.Text = "월드 보스 생성됨"
+            timerRunning = false
+            return
+        else
+            local hours = math.floor(remaining / 3600)
+            local minutes = math.floor((remaining % 3600) / 60)
+            local seconds = math.floor(remaining % 60)
+            label.Text = string.format("월드 보스 리젠까지 %02d:%02d:%02d", hours, minutes, seconds)
+        end
+        task.wait(1)
+    end
+end
+
+-- 처음 실행
+updateTimer()
+
+-- Cool 값 변화 감지
+coolValue.Changed:Connect(function()
+    if coolValue.Value >= COOLDOWN then
+        label.Text = "월드 보스 생성됨"
+    else
+        updateTimer()
+    end
+end)
