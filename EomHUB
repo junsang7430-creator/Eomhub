@@ -6,6 +6,7 @@ local COOLDOWN = 9000
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
+local UIS = game:GetService("UserInputService")
 
 -- UI 생성
 local gui = Instance.new("ScreenGui")
@@ -19,10 +20,8 @@ frame.Position = UDim2.fromScale(0.5, 0.1) - UDim2.fromOffset(180, 0)
 frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 frame.BackgroundTransparency = 0.3
 
--- 둥근 모서리
 Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 16)
 
--- 하얀 테두리
 local stroke = Instance.new("UIStroke", frame)
 stroke.Color = Color3.new(1,1,1)
 stroke.Thickness = 2
@@ -52,13 +51,42 @@ close.MouseButton1Click:Connect(function()
 	frame.Visible = false
 end)
 
+-- 드래그 이동
+local dragging = false
+local dragStart, startPos
+
+frame.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = frame.Position
+
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+UIS.InputChanged:Connect(function(input)
+	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+		local delta = input.Position - dragStart
+		frame.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
 -- 보스 NumberValue 접근
 local boss = BOSS_SPAWNER:WaitForChild(BOSS_NAME)
 local coolValue = boss:WaitForChild("Cool")
 
 local timerRunning = false
 
--- 타이머 업데이트 (원래 로직 유지)
 local function updateTimer()
 	if timerRunning then return end
 	timerRunning = true
@@ -70,10 +98,10 @@ local function updateTimer()
 			timerRunning = false
 			return
 		else
-			local hours = math.floor(remaining / 3600)
-			local minutes = math.floor((remaining % 3600) / 60)
-			local seconds = math.floor(remaining % 60)
-			label.Text = string.format("월드 보스 리젠까지 %02d:%02d:%02d", hours, minutes, seconds)
+			local h = math.floor(remaining / 3600)
+			local m = math.floor((remaining % 3600) / 60)
+			local s = math.floor(remaining % 60)
+			label.Text = string.format("월드 보스 리젠까지 %02d:%02d:%02d", h, m, s)
 		end
 		task.wait(1)
 	end
